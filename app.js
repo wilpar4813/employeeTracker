@@ -9,27 +9,33 @@ var connection = mysql.createConnection({
     // Your username
     user: "root",
     // Your password
-    password: "",
-    database: "employeeDb"
+    password: "lancelot",
+    database: "employees"
 });
 // Error for failed connection
 connection.connect(function (err) {
-    if (err) 
-        throw err;
-    
-
-
-    runSearch();
+    if (err) throw err;
+    banner();
+    manageSelections();
 });
 
-
-// * Add departments, roles, employees
-
-// * View departments, roles, employees
-
-// * Update employee roles
-
-
+const banner = () => {
+    console.log(" ____________________________________________________");
+    console.log("|                                                   |");
+    console.log("|  _____                  _                         |");
+    console.log("| |  ___|_ ___  _  _ ___ | | ___  _   _  ___   ___  |");
+    console.log("| |  _| | `_  '_ \|  _  \| |/ _ \| | | |/ _ \ / _ \ |");
+    console.log("| | |___| | | | | | |_|  | | |_| | | | |  __/|  __/ |");
+    console.log("| |_____|_| |_| |_| ____/|_|\___/|___| |\___| \___| |");
+    console.log("|                 |_|             |___/             |");
+    console.log("|  __  __                                           |");
+    console.log("| |  \/  | ____ _ __   ____  ___   ___   _ __       |");
+    console.log("| | |\/| |/ _' | '_ \ / _  |/ _ \ / _ \ ' '__|      |");
+    console.log("| | |  | | |_| | | | | | | | |_| |  __/ | |         |");
+    console.log("| |_|  |_|\__,_|_| |_|\__,_|\__, |\___|_|_|         |");
+    console.log("|                           |___/                   |");;
+    console.log("`---------------------------------------------------'");
+}
 const manageSelections = () => {
     inquirer.prompt([{
             name: "employeeManagement",
@@ -69,41 +75,6 @@ const manageSelections = () => {
         } // End switch statement
     }); // End then promise
 };
-
-
-const createEmployee = (roles, managers) => {
-
-
-    inquirer.prompt([
-        {
-            message: "What is the employee's first name?",
-            name: "first_name",
-            type: "input"
-        }, {
-            message: "What is the employee's last name?",
-            name: "last_name",
-            type: "input"
-        }, {
-            message: "What is the employee's role?",
-            name: "role_id",
-            choices: employeeRoles, // roles array
-            type: "list"
-        }, {
-            message: "Who is the employee's manager?",
-            name: "manager_id",
-            choices: myManager, // managers array
-            type: "list"
-        }
-    ]).then((res) => {
-        console.log(res); // actual answers object
-        console.log(res.role_id); // role chosen
-    });
-}; // end create employee
-
-
-
-
-
 
 const addEmployee = () => {
    
@@ -201,40 +172,52 @@ const addEmployee = () => {
         });
     }; // end add department
 
-    const addRole = () => {
-        inquirer.prompt([
+    function addRole() {
+        let array = [];
+        var query = "SELECT department_id as value, department_name as name FROM department";
+        connection.query(query, function (err, res) {
+          if (err) throw err;
+          array = JSON.parse(JSON.stringify(res));
+          var questions = [
             {
-                name: 'role',
-                type: 'input',
-                message: 'What role would you like to add?'
-            }, 
+              type: "input",
+              name: "title",
+              message: "What is the name of the new role?"
+            },
             {
-                name: 'salary',
-                type: 'input',
-                message: 'What salary does this role make?'
-            }, 
+              type: "input",
+              name: "salary",
+              message: "What is the salary of this new role?",
+              validate: validateSalary
+            },
             {
-                name: 'roleDept',
-                type: 'list',
-                message: 'What department does this role fall under?',
-                choices: function () {
-                    let choiceArray = [];
-                    for (let i = 0; i < res.length; i++) {
-                        choiceArray.push(res[i].name);
-                    }
-                    return choiceArray;
-                }
-            }
-        ]).then(function (res) {});
-        connection.query('SELECT * FROM department', function (err, res) {
-            if (err) 
-                throw err;
-            
-            
-           
-        });//End Query connection
-    };
-
+              type: 'list',
+              name: 'department',
+              message: 'which department is the new role belongs?',
+              choices: array
+            },
+            {
+              type: 'confirm',
+              name: 'manager',
+              message: 'Is this a manager role?',
+              default: false
+            }];
+      
+          inquirer.prompt(questions).then(answer => {
+            connection.query("INSERT INTO role (role_title, role_salary, department_id, manager) VALUES (?, ?, ?, ?)",
+              [answer.title, answer.salary, answer.department, answer.manager], function (err, res) {
+                if (err) throw err;
+                console.log(answer.title + " role has been added.");
+                manageSelections();
+              });
+          });
+        });
+      }
+      
+function validateSalary(salary) {
+    var salaryEntered = /^\d+$/;
+    return salaryEntered.test(salary) || "Salary should be a number!";
+}
 
 function viewDepartments() {
     var query = "SELECT * FROM department";
@@ -321,6 +304,5 @@ const updateRole = () => {
         if (err) throw err;
         manageSelections();
       });
-  
     });
   };
