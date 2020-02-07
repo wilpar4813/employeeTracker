@@ -9,7 +9,7 @@ var connection = mysql.createConnection({
     // Your username
     user: "root",
     // Your password
-    password: "lancelot",
+    password: "root",
     database: "employees"
 });
 // Error for failed connection
@@ -47,25 +47,30 @@ const manageSelections = () => {
                 "Add Employee",
                 "View Departments",
                 "View Employee Roles",
-                "View Employees",
+                "View Current Employees",
                 "Update Employee Role",
-                "Exit Program"
+                "Exit"
             ]
         }]).then(({employeeManagement}) => {
+        console.log(employeeManagement + " testing")
         switch (employeeManagement) {
-            case "Add a Department":
+            case "Add Department":
                 addDepartment();
                 break;
-            case "Add a Role":
+            case "Add Employee Role":
                 addRole();
                 break;
-            case "Add an Employee": addEmployee();
+            case "Add Employee": 
+                addEmployee();
                 break;
-            case "View Departments": viewDepartments();
+            case "View Departments": 
+                viewDepartments();
                 break;
-            case "View Roles": viewRoles();
+            case "View Employee Roles": 
+                viewRoles();
                 break;
-            case "View Current Employees": viewEmployees();
+            case "View Current Employees": 
+                viewEmployees();
                 break;
             case "Update Employee Role":
                 updateRole();
@@ -77,107 +82,84 @@ const manageSelections = () => {
 };
 
 const addEmployee = () => {
-   
+    let roles;
+    
     //Build an array of Current Titles and Title ID's 
-    var query_one = "SELECT id, title FROM role";
-    connection.query(query_one, function (err, res) {
+    var query = "SELECT role_id, role_title FROM role";
+    
+    connection.query(query, function (err, res) {
         roles = res;
-    });
-    //Build an array of Current Managers
-    var query_two = "SELECT id, first_name, last_name, CONCAT_WS(' ', first_name, last_name) AS managers FROM employee";
-    connection.query(query_two, function (err, res) {
-      managers = res;
-    });
-
-    let roleCall = [];
-    let managerNames = [];
-    //Build object array of role titles for user to select from
+        console.log(roles)
+        console.log(roles.length);
+        //Create array of roles for user to pick from
+        let roleCall = [];
+        //Build object array of role titles for user to select from
+        for (i = 0; i < roles.length; i++) {
+            roleCall.push(Object.values(roles[i].role_title).join(""));
+        };//End for loop
+        console.log(roleCall)
+        inquirer.prompt([
+        {
+            message: "What is the employee's first name?",
+            name: "first_name",
+            type: "input"
+        },
+        {
+            message: "What is the employee's last name?",
+            name: "last_name",
+            type: "input"
+        },
+        {
+            message: "What is the employee's role?",
+            name: "role_title",
+            //Use roleCall array to provide role choices
+            choices: roleCall, 
+            type: "list"
+        }
+        ]).then((res) => {
+    
     for (i = 0; i < roles.length; i++) {
-      roleCall.push(Object.values(roles[i].title).join(""));
-    };
-    //Build object array of manager names for user to select from
-    for (i = 0; i < managers.length; i++) {
-      managerNames.push(Object.values(managers[i].managers).join(""));
-    };
-  
-    inquirer.prompt([
-      {
-        message: "What is the employee's first name?",
-        name: "first_name",
-        type: "input"
-      },
-      {
-        message: "What is the employee's last name?",
-        name: "last_name",
-        type: "input"
-      },
-      {
-        message: "What is the employee's role?",
-        name: "role_id",
-        //Use roleCall array to provide role choices
-        choices: roleCall, 
-        type: "list"
-      },
-      {
-        message: "Who is the employee's manager?",
-        name: "manager_id",
-        //Use managerNames array to provide manager choices
-        choices: managerNames, 
-        type: "list"
-      }
-    ]).then((res) => {
-  
-    //These variables will be passed into the INSERT query 
-      let role_id;
-      let manager_id;
-  
-      //Loop through roles for corespondiong role title and role_id
-      for (i = 0; i < roles.length; i++) {
-        if (roles[i].title === res.role_id) {
-          role_id = roles[i].id;
+        if (roles[i].role_title === res.role_title) {
+            role_id = roles[i].id;
         };
-      };
-      //Loop through managers for corespondiong manager and manager_id
-      for (i = 0; i < managers.length; i++) {
-        if (managers[i].managers === res.manager_id) {
-          manager_id = managers[i].id;
-        };
-      };
-      var query = "INSERT INTO employee SET ?, ?, ?, ?";
-      connection.query(query, [{ first_name: res.first_name }, { last_name: res.last_name }, { role_id: role_id }, { manager_id: manager_id }], function (err, res) {
+    };
+    var query = "INSERT INTO employee (first_name, last_name, role_id) VALUES(?, ?, ?)";
+    connection.query(query, [{ first_name: res.first_name }, { last_name: res.last_name }, { role_id: role_id }], function (err, res) {
         if (err) throw err;
         // Call primary menu.
+       
         manageSelections();
       });//End of query connection
-    });// End of then promise
+    });//connection then
+    });//End of first query
   };//end add employee
   
 
     // Adding a department...
     const addDepartment = () => {
+        console.log("hello!")
         inquirer.prompt(
             {
             name: 'department', 
             type: 'input', 
             message: 'What department would you like to add?'
             }).then(function (res) {
-                connection.query('INSERT INTO department SET ?', {
-                name: res.department
-            }, function (err) {
-                if (err) 
-                    throw err;
-                console.log(`${res.department} department was successfully updated. \n`);
+                const query = "INSERT INTO department (department_name) VALUES (?)";
+                connection.query(query, [res.department], function(err,res){
+                if (err) throw err;
+                console.log("Department was successfully updated. \n");
                 manageSelections();
             });
         });
     }; // end add department
 
     function addRole() {
+        //Build an array of role choices
         let array = [];
         var query = "SELECT department_id as value, department_name as name FROM department";
         connection.query(query, function (err, res) {
           if (err) throw err;
-          array = JSON.parse(JSON.stringify(res));
+          array = JSON.parse(JSON.stringify(res)); 
           var questions = [
             {
               type: "input",
@@ -195,22 +177,16 @@ const addEmployee = () => {
               name: 'department',
               message: 'which department is the new role belongs?',
               choices: array
-            },
-            {
-              type: 'confirm',
-              name: 'manager',
-              message: 'Is this a manager role?',
-              default: false
             }];
-      
-          inquirer.prompt(questions).then(answer => {
-            connection.query("INSERT INTO role (role_title, role_salary, department_id, manager) VALUES (?, ?, ?, ?)",
-              [answer.title, answer.salary, answer.department, answer.manager], function (err, res) {
+        
+          inquirer.prompt(questions).then(res => {
+            const query = "INSERT INTO role (role_title, role_salary, department_id) VALUES (?, ?, ?)";
+            connection.query(query, [res.title, res.salary, res.department], function (err, res) {
                 if (err) throw err;
-                console.log(answer.title + " role has been added.");
+                console.log(res.title + " role has been added.");
                 manageSelections();
               });
-          });
+          });//End Inquirer then
         });
       }
       
