@@ -4,7 +4,7 @@ USE employees;
 
 CREATE TABLE department (
     department_id INT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-    deaprtment_name VARCHAR(30) NOT NULL
+    department_name VARCHAR(30) NOT NULL
 );
 
 CREATE TABLE role (
@@ -20,7 +20,5 @@ CREATE TABLE employee (
     first_name VARCHAR (30) NOT NULL,
     last_name VARCHAR (30) NOT NULL,
     role_id INT NOT NULL,
-    CONSTRAINT fk_role FOREIGN KEY (role_id) REFERENCES role (role_id) ON DELETE CASCADE,
-
-
+    CONSTRAINT fk_role FOREIGN KEY (role_id) REFERENCES role(role_id) ON DELETE CASCADE
 );
