@@ -75,10 +75,10 @@ const manageSelections = () => {
             case "Update Employee Role":
                 updateRole();
                 break;
-            case "Delete Employee":
+            /*case "Delete Employee":
                 console.log("This feature will be availabe in the next release");
                 manageSelections();
-                break;
+                break;*/
             case "Exit": 
                 connection.end();
                 break;
@@ -177,7 +177,7 @@ function addRole() {
             {
               type: 'list',
               name: 'department',
-              message: 'which department is the new role belongs?',
+              message: 'Which department is the new role belongs?',
               choices: array
             }];
         
